@@ -8,7 +8,9 @@ services:
       - "443:443"
       - "80:80"
     depends_on:
-    - mariadb
+      - wordpress
+    volumes:
+      - /home/${USER}/data/wordpress:/var/www/wordpress:ro   
     networks:
       - inception
 
@@ -18,6 +20,16 @@ services:
     env_file: .env
     volumes:
       - /home/${USER}/data/mariadb:/var/lib/mysql
+    networks:
+      - inception
+
+  wordpress:
+    build: ./requirements/wordpress
+    container_name: wordpress
+    expose:
+      - "9000"
+    volumes:
+      - /home/${USER}/data/wordpress:/var/www/wordpress     
     networks:
       - inception
 
