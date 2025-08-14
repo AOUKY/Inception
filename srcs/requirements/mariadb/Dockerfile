@@ -10,6 +10,8 @@ RUN apt-get update && \
     apt-get clean 
 
 # Copy the entrypoint script 
+COPY conf/mariadb.conf /etc/mysql/mariadb.conf.d/50-server.cnf
+
 COPY tools/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 

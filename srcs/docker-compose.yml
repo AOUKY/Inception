@@ -1,4 +1,4 @@
-version: '3.8'
+
 
 services:
   nginx:
@@ -13,6 +13,7 @@ services:
       - /home/${USER}/data/wordpress:/var/www/wordpress:ro   
     networks:
       - inception
+    restart: always
 
   mariadb:
     build: ./requirements/mariadb
@@ -22,16 +23,20 @@ services:
       - /home/${USER}/data/mariadb:/var/lib/mysql
     networks:
       - inception
+    restart: always
 
   wordpress:
     build: ./requirements/wordpress
     container_name: wordpress
+    depends_on:
+      - mariadb
     expose:
       - "9000"
     volumes:
       - /home/${USER}/data/wordpress:/var/www/wordpress     
     networks:
       - inception
+    restart: always
 
 networks:
   inception:
