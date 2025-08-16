@@ -7,8 +7,13 @@ ENV DEBIAN_FRONTEND=noninteractive
 # 3. Install PHP, extensions, and deps to fetch WP
 RUN apt-get update && apt-get install -y \
     php-fpm php-mysql php-cli php-curl php-gd \
+    curl \
+    rsync \
+    mariadb-client \
     php-mbstring php-xml php-zip wget tar && \
     apt-get clean
+
+# RUN apt install -y curl 
     
 # 5. The site lives here (mounted as a volume at runtime)
 WORKDIR /var/www/wordpress
