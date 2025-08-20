@@ -5,14 +5,12 @@ RUN apk add --no-cache nginx && \
 
 COPY conf/nginx.conf /etc/nginx/nginx.conf
 
+RUN apk add --no-cache openssl
 
-COPY html /usr/share/nginx/html
-
-COPY conf/certs/cert.crt /etc/nginx/certs/cert.crt
-COPY conf/certs/cert.key /etc/nginx/certs/cert.key
+COPY tools/ssl.sh /tmp/ssl.sh
+RUN sh /tmp/ssl.sh && rm /tmp/ssl.sh
 
 EXPOSE 443
-EXPOSE 80
 
 CMD ["nginx", "-g", "daemon off;"]
 
