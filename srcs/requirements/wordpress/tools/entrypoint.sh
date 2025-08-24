@@ -1,78 +1,47 @@
 #!/bin/bash
 set -e
 
-WP_PATH="/var/www/wordpress"
 
-log() { echo "[WordPress] $*"; }
+chmod -R 755 /var/www/wordpress
+chown -R www-data:www-data /var/www/wordpress
 
-# --- 1) Download WordPress core if missing ---
-if [ ! -f "$WP_PATH/wp-settings.php" ]; then
-  log "Downloading WordPress core..."
-  tmpdir="$(mktemp -d)"
-  wget -q https://wordpress.org/latest.tar.gz -O "$tmpdir/wp.tar.gz"
-  tar -xzf "$tmpdir/wp.tar.gz" -C "$tmpdir"
-  rsync -a "$tmpdir/wordpress/" "$WP_PATH/"
-  chown -R www-data:www-data "$WP_PATH"
-  rm -rf "$tmpdir"
-  log "Core files placed in $WP_PATH."
-else
-  log "Core files already present — skipping download."
-fi
 
-# --- 2) Wait for MariaDB to be ready ---
-log "Waiting for MariaDB..."
-until mysqladmin ping -hmariadb -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" --silent; do
-  sleep 2
+until mysqladmin ping -h mariadb -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" --silent; do
+  sleep 1
 done
-log "MariaDB is up."
 
-# --- 3) Configure wp-config.php if missing ---
-if [ ! -f "$WP_PATH/wp-config.php" ]; then
-  log "Creating wp-config.php..."
-  cp "$WP_PATH/wp-config-sample.php" "$WP_PATH/wp-config.php"
-  sed -i "s/database_name_here/${MYSQL_DATABASE}/" "$WP_PATH/wp-config.php"
-  sed -i "s/username_here/${MYSQL_USER}/"        "$WP_PATH/wp-config.php"
-  sed -i "s/password_here/${MYSQL_PASSWORD}/"    "$WP_PATH/wp-config.php"
-  sed -i "s/localhost/mariadb/"                  "$WP_PATH/wp-config.php"
-  chown -R www-data:www-data "$WP_PATH"
-  log "wp-config.php created."
-else
-  log "wp-config.php already exists — skipping."
-fi
 
-# --- 4) Install WordPress if not installed ---
-if ! wp core is-installed --path="$WP_PATH" --allow-root >/dev/null 2>&1; then
-  log "Running wp core install..."
-  wp core install \
-    --url="$WP_URL" \
-    --title="$WP_TITLE" \
-    --admin_user="$WP_ADMIN_USER" \
-    --admin_password="$WP_ADMIN_PASSWORD" \
-    --admin_email="$WP_ADMIN_EMAIL" \
-    --path="$WP_PATH" \
-    --skip-email \
-    --allow-root
-  log "Core install done."
-else
-  log "WordPress already installed — skipping install."
-fi
+if [ ! -f /var/www/wordpress/wp-config.php ]; then
+    
+    wp core download --allow-root
 
-# --- 5) Ensure the second user exists (idempotent) ---
-if [ -n "${WP_SECOND_USER:-}" ] && [ -n "${WP_SECOND_EMAIL:-}" ] && [ -n "${WP_SECOND_PASSWORD:-}" ]; then
-  if ! wp user get "$WP_SECOND_USER" --path="$WP_PATH" --allow-root >/dev/null 2>&1; then
-    log "Creating second user: $WP_SECOND_USER"
+    
+    wp config create --dbhost=mariadb:3306 \
+        --dbname="$MYSQL_DATABASE" \
+        --dbuser="$MYSQL_USER" \
+        --dbpass="$MYSQL_PASSWORD" \
+        --allow-root
+
+    
+    wp core install --url="$DOMAIN_NAME" \
+        --title="Inception" \
+        --admin_user="$WP_ADMIN_USER" \
+        --admin_password="$WP_ADMIN_PASSWORD" \
+        --admin_email="$WP_ADMIN_EMAIL" \
+        --allow-root
+
+    
     wp user create "$WP_SECOND_USER" "$WP_SECOND_EMAIL" \
-      --role="${WP_SECOND_ROLE:-author}" \
-      --user_pass="$WP_SECOND_PASSWORD" \
-      --path="$WP_PATH" \
-      --allow-root
-  else
-    log "Second user already exists — skipping."
-  fi
-else
-  log "Second user vars not set — skipping."
+        --role="$WP_SECOND_ROLE" \
+        --user_pass="$WP_SECOND_PASSWORD" \
+        --allow-root
 fi
 
-# --- 6) Run PHP-FPM in foreground ---
-exec php-fpm7.4 -F
 
+sed -i 's@/run/php/php8.2-fpm.sock@9000@' /etc/php/8.2/fpm/pool.d/www.conf
+
+
+mkdir -p /run/php
+
+
+php-fpm8.2 -F

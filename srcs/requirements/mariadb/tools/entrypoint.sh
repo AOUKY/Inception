@@ -1,13 +1,13 @@
 #!/bin/bash
 set -e
 
-# Start MariaDB in background for initialization
+
 mysqld_safe --skip-networking &
 
-# Wait for MariaDB to start
+
 sleep 5
 
-# Set root password and create database/user
+
 mysql -uroot <<-EOSQL
     -- Set root password
     SET PASSWORD FOR 'root'@'localhost' = PASSWORD('${MYSQL_ROOT_PASSWORD}');
@@ -25,9 +25,9 @@ mysql -uroot <<-EOSQL
     FLUSH PRIVILEGES;
 EOSQL
 
-# Stop the temporary server
+
 mysqladmin -uroot -p"${MYSQL_ROOT_PASSWORD}" shutdown
 
-# Start MariaDB normally (foreground)
+
 exec mysqld_safe
 
