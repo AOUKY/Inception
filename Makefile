@@ -1,10 +1,11 @@
 NAME := inception
 COMPOSE := docker compose -f srcs/docker-compose.yml
 DATA_DIR = /home/$(USER)/data
+ENV_FILE = srcs/.env
 
 all: build up
 
-build:
+build: $(ENV_FILE)
 	mkdir -p $(DATA_DIR)/mariadb $(DATA_DIR)/wordpress
 	$(COMPOSE) build 
 

@@ -20,5 +20,6 @@ RUN chmod +x entrypoint.sh && \
 
 WORKDIR /var/www/wordpress
 
+EXPOSE 9000
 
 ENTRYPOINT ["/entrypoint.sh"]

@@ -4,9 +4,11 @@ set -e
 
 mysqld_safe --skip-networking &
 
-
-sleep 5
-
+until mysqladmin ping --silent;
+    do 
+        echo "waiting..." 
+        sleep 1
+done
 
 mysql -uroot <<-EOSQL
     -- Set root password
